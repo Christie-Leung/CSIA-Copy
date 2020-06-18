@@ -3,6 +3,7 @@ package com.example.CSIA.api;
 import com.example.CSIA.entity.User;
 import com.example.CSIA.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,24 +26,22 @@ public class UserController {
 
     // Adds a User
     @PostMapping
-    public String insertUser(@Valid @NonNull @RequestBody User user) {
+    public ResponseEntity<?> insertUser(@NonNull @Valid @RequestBody User user) {
         userRepository.save(user);
-        return "Success!";
+        return ResponseEntity.ok("Success!");
     }
 
     // Get All Users
     @GetMapping
-    public Iterable<User> getAllUser() {
-        return userRepository.findAll();
+    public ResponseEntity<?> getAllUser() {
+        return ResponseEntity.ok(userRepository.findAll());
     }
 
     // Get All ID
     @GetMapping("/id")
     public List<UUID> getAllUserID() {
         List<UUID> uuidList = new ArrayList<>();
-        userRepository.findAll().forEach(User -> {
-            uuidList.add(User.getID());
-        });
+        userRepository.findAll().forEach(User -> uuidList.add(User.getID()));
         return uuidList;
     }
 
@@ -69,7 +68,6 @@ public class UserController {
     // Delete User
     @DeleteMapping("/{id}")
     public void removeUser(@PathVariable("id") UUID id) {
-        System.out.println(id);
         userRepository.deleteById(id);
     }
 
@@ -77,6 +75,7 @@ public class UserController {
     @PutMapping("/{id}")
     public User updateUser(@PathVariable("id") UUID id, @Valid @NonNull @RequestBody User user) {
         User newUser = userRepository.findById(id).orElse(null);
+        assert newUser != null;
         newUser.setName(user.getName());
         newUser.setRole(user.getRole());
         return userRepository.save(newUser);

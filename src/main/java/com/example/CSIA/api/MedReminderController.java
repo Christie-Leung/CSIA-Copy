@@ -3,6 +3,7 @@ package com.example.CSIA.api;
 import com.example.CSIA.entity.MedicationReminder;
 import com.example.CSIA.repository.MedicationReminderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,10 +22,11 @@ public class MedReminderController {
         this.mrr = medicationReminderRepository;
     }
 
-    @PostMapping
-    public int insertMedReminder(@RequestBody @NonNull @Valid MedicationReminder medicationReminder) {
+    @PostMapping("/{id}")
+    public ResponseEntity<?> insertMedReminder(@PathVariable("id") UUID id, @RequestBody @NonNull @Valid MedicationReminder medicationReminder) {
+        medicationReminder.setId(id);
         mrr.save(medicationReminder);
-        return 1;
+        return ResponseEntity.ok("Success!");
     }
 
     @GetMapping
@@ -56,13 +58,17 @@ public class MedReminderController {
     @PutMapping("/{id}/{med}")
     public MedicationReminder updateMedReminderByMedName(@PathVariable("id") UUID id, @PathVariable("med") String medName,
                                           @RequestBody @Valid @NonNull MedicationReminder mr) {
-        MedicationReminder newMr = mrr.findById(id).filter(MedicationReminder ->
-                MedicationReminder.getMedication().equals(mr.getMedication())).get();
-        newMr.setMedStartTime(mr.getMedStartTime());
-        newMr.setMedEndTime(mr.getMedEndTime());
-        newMr.setMedication(mr.getMedication());
-        newMr.setMedInterval(mr.getMedInterval());
-        return mrr.save(newMr);
+        Optional<MedicationReminder> tempMr = mrr.findById(id).filter(MedicationReminder ->
+                MedicationReminder.getMedication().equals(mr.getMedication()));
+        if (tempMr.isPresent()) {
+            MedicationReminder newMr = tempMr.get();
+            newMr.setMedStartTime(mr.getMedStartTime());
+            newMr.setMedEndTime(mr.getMedEndTime());
+            newMr.setMedication(mr.getMedication());
+            newMr.setMedInterval(mr.getMedInterval());
+            return mrr.save(newMr);
+        }
+        return null;
     }
 
 }

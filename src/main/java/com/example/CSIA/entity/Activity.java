@@ -16,15 +16,17 @@ import java.util.UUID;
 @JsonIgnoreProperties(allowGetters = true, ignoreUnknown = true)
 public class Activity {
 
+    @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Column(columnDefinition = "BINARY(16)")
-    private UUID activityID;
-
-    @Id
-    @Column(columnDefinition = "BINARY(16)")
-    @NonNull
     private UUID id;
+
+    @NonNull
+    private UUID userId;
+
+    @NonNull
+    private UUID respondingUserId;
 
     @NonNull
     private LocalDateTime startTime;
@@ -36,12 +38,12 @@ public class Activity {
     private String activityName;
 
 
-    public UUID getid() {
+    public UUID getActivityId() {
         return id;
     }
 
-    public UUID getActivityID() {
-        return activityID;
+    public UUID getUserId() {
+        return userId;
     }
 
     public LocalDateTime getStartTime() {
@@ -67,4 +69,27 @@ public class Activity {
     public void setActivityName(String activityName) {
         this.activityName = activityName;
     }
+
+    public UUID getRespondingUserId() {
+        return respondingUserId;
+    }
+
+    public void setRespondingUserId(UUID respondingUserId) {
+        this.respondingUserId = respondingUserId;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

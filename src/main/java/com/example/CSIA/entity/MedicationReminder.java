@@ -1,7 +1,6 @@
 package com.example.CSIA.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.hibernate.annotations.GenericGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 
@@ -72,5 +71,9 @@ public class MedicationReminder {
 
     public void setMedication(String medication) {
         this.medication = medication;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 }
