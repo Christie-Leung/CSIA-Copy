@@ -7,7 +7,6 @@ import org.springframework.lang.NonNull;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -27,7 +26,13 @@ public class MedicationReminder {
     private LocalDateTime medEndTime;
 
     @NonNull
-    private LocalTime medInterval;
+    private short medInterval;
+
+    @NonNull
+    private int medTotalCount;
+
+    @NonNull
+    private int medRemainingCount;
 
     @NotBlank
     private String medication;
@@ -49,7 +54,7 @@ public class MedicationReminder {
     }
 
     @NonNull
-    public LocalTime getMedInterval() {
+    public short getMedInterval() {
         return medInterval;
     }
 
@@ -65,7 +70,7 @@ public class MedicationReminder {
         this.medEndTime = medEndTime;
     }
 
-    public void setMedInterval(@NonNull LocalTime medInterval) {
+    public void setMedInterval(@NonNull short medInterval) {
         this.medInterval = medInterval;
     }
 
@@ -75,5 +80,21 @@ public class MedicationReminder {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public int getMedTotalCount() {
+        return medTotalCount;
+    }
+
+    public void setMedTotalCount(int medTotalCount) {
+        this.medTotalCount = medTotalCount;
+    }
+
+    public int getMedRemainingCount() {
+        return medRemainingCount;
+    }
+
+    public void setMedRemainingCount(int medRemainingCount) {
+        this.medRemainingCount = medRemainingCount;
     }
 }

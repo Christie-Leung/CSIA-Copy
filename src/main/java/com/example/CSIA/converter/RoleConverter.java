@@ -1,7 +1,5 @@
 package com.example.CSIA.converter;
 
-import com.example.CSIA.entity.User;
-
 import javax.persistence.AttributeConverter;
 import java.util.Hashtable;
 import java.util.Map;

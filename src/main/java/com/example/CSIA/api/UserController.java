@@ -62,6 +62,8 @@ public class UserController {
                 userByRole.add(user);
             }
         }
+
+        userByRole.sort(new SortUser());
         return userByRole;
     }
 

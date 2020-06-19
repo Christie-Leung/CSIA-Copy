@@ -57,7 +57,7 @@ public class MedReminderController {
 
     @PutMapping("/{id}/{med}")
     public MedicationReminder updateMedReminderByMedName(@PathVariable("id") UUID id, @PathVariable("med") String medName,
-                                          @RequestBody @Valid @NonNull MedicationReminder mr) {
+                                                         @RequestBody @Valid @NonNull MedicationReminder mr) {
         Optional<MedicationReminder> tempMr = mrr.findById(id).filter(MedicationReminder ->
                 MedicationReminder.getMedication().equals(mr.getMedication()));
         if (tempMr.isPresent()) {
