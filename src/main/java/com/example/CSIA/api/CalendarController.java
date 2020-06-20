@@ -30,12 +30,20 @@ public class CalendarController {
         this.userRepository = userRepository;
     }
 
+    /*
     @PostMapping
     public ResponseEntity<?> insertActivity(@Valid @NonNull @RequestBody Activity activity) {
         calendarRepository.save(activity);
         return ResponseEntity.accepted().build();
     }
+     */
 
+    /**
+     * This method is used for inserting a doctor's shift hours. The doctor id must be present in the user database. The activity must be valid.
+     * @param id Doctor ID that must be in the user database
+     * @param activity A valid activity entity parsed through a JSON file
+     * @return whether the method was successful or not
+     */
     @PostMapping("/shift/{userId}")
     public ResponseEntity<?> addShiftHours(@PathVariable("userId") UUID id, @Valid @NonNull @RequestBody Activity activity) {
         if (userRepository.findById(id).isPresent()) {
@@ -47,10 +55,16 @@ public class CalendarController {
                 throw new RoleException(userRepository.findById(id).get().getRole(), "DOCTOR");
             }
         }
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.badRequest().body("Error! User ID is invalid!");
     }
 
 
+    /**
+     * This method is used to book appointments. The id must be in the user database and is a patient. The activity must be valid.
+     * @param id Patient ID that must be in the user database
+     * @param activity A Valid activity entity parsed through a JSON file
+     * @return whether the method was successful or the error that occured
+     */
     @PostMapping("/book/{userId}")
     public ResponseEntity<?> bookAppointment(@PathVariable("userId") UUID id, @Valid @NonNull @RequestBody Activity activity) {
         if (userRepository.findById(id).isPresent() && activity.getRespondingUserId() != null) {
@@ -78,6 +92,13 @@ public class CalendarController {
         return ResponseEntity.badRequest().build();
     }
 
+    /**
+     * This method gets a specified doctor's shifts in a specific day range.
+     * @param id Doctor ID that must be in the user database.
+     * @param startDate The first day in the specified day range.
+     * @param endDate The last day in the specified day range.
+     * @return An array of the specific doctor's shifts in the specified day range.
+     */
     @GetMapping("/shift/{startDate}/{endDate}/{id}")
     public ResponseEntity<?> getShiftHours(@PathVariable("id") UUID id, @PathVariable("startDate") LocalDate startDate,
                                            @PathVariable("endDate") LocalDate endDate) {
@@ -85,6 +106,12 @@ public class CalendarController {
         return ResponseEntity.ok(shifts);
     }
 
+    /**
+     * This method gets a specified doctor's available hours during a requested day
+     * @param id Doctor ID that must be in the user database.
+     * @param date Specified date for doctor's available hours during shift
+     * @return An array of the doctor's available hours during specified day
+     */
     @GetMapping("/available/{date}/{doctorId}")
     public ResponseEntity<?> getAvailableHours(@PathVariable("doctorId") UUID id, @PathVariable("date") LocalDate date) {
         if (userRepository.findById(id).isPresent()) {
@@ -94,59 +121,134 @@ public class CalendarController {
                 return ResponseEntity.badRequest().body("User is not a doctor!");
             }
         } else {
-            return ResponseEntity.badRequest().body("Not a valid user!");
+            return ResponseEntity.badRequest().body("Error! User ID is invalid!");
         }
     }
 
-    @GetMapping("/user/{id}")
-    public ResponseEntity<?> getActivityByUserId(@PathVariable("id") UUID userId) {
-        List<Activity> userActivities = getUserActivities(userId);
-        if (userActivities != null) {
-            if (userActivities.size() > 0) {
-                return ResponseEntity.ok(userActivities);
-            } else {
-                return ResponseEntity.badRequest().body("User has no activities!");
+    /**
+     * This method gets all doctor's available hours during a specified date.
+     * @param date Specified day for getting doctors' available hours.
+     * @return A map that is ordered by the doctor's name in alphabetical order with their available hours during shift on the specified day.
+     */
+    @GetMapping("/available/{date}")
+    public ResponseEntity<?> getAvailableHours(@PathVariable("date") LocalDate date) {
+        Map<String, LocalDateTime[][]> availableHours = new HashMap<>();
+        for (User user : userRepository.findAll()) {
+            if (RoleConverter.getUserRoleHashTable().get(user.getRole()) == 3) {
+                availableHours.put(user.getName(), getDoctorAvailableHours(user.getID(), date));
             }
+        }
+        Map<String, LocalDateTime[][]> sortedMap = new TreeMap<>(availableHours);
+        if (!sortedMap.isEmpty()) {
+            return ResponseEntity.ok(sortedMap);
         }
         return ResponseEntity.badRequest().body("Error!");
     }
 
+    /**
+     * This method gets all activities by a user that is in the user database.
+     * @param userId Valid ID that is in the user database.
+     * @return A list of all the user's activities
+     */
+    @GetMapping("/user/{id}")
+    public ResponseEntity<?> getActivityByUserId(@PathVariable("id") UUID userId) {
+        if (userRepository.findById(userId).isPresent()) {
+            List<Activity> userActivities = getUserActivities(userId);
+            if (userActivities != null) {
+                if (userActivities.size() > 0) {
+                    return ResponseEntity.ok(userActivities);
+                }
+            }
+            return ResponseEntity.badRequest().body("Error! User has no activities!");
+        }
+        return ResponseEntity.badRequest().body("Error! User ID is invalid!");
+    }
+
+    /**
+     * This method gets all appointments in a specified day range.
+     * @param startDate The first day in the specified day range.
+     * @param endDate The last day in the specified day range.
+     * @return A list of user's activities in the specified day range.
+     */
     @GetMapping("/user/{startDate}/{endDate}")
     public ResponseEntity<?> getAppointmentsInRange(@PathVariable("startDate") LocalDate startDate, @PathVariable("endDate") LocalDate endDate) {
         return ResponseEntity.ok(Objects.requireNonNull(getUserActivities(1, startDate, endDate)));
     }
 
+    /**
+     * This method gets all activities in one day.
+     * @param date Specified day to get all activities
+     * @return A list of activities in the specified date.
+     */
     @GetMapping("/day/{day}")
     public Iterable<Activity> getAllActivityByDay(@PathVariable("day") LocalDate date) {
         return getActivitiesInRange(date, date);
     }
 
+    /**
+     * This method gets all activities within the next 7 days
+     * @return A list of activities occurring in the next 7 days from current date.
+     */
     @GetMapping("/7day")
     public ResponseEntity<?> getAllActivitiesIn7Days() {
         return ResponseEntity.ok(Objects.requireNonNull(getActivitiesInRange(LocalDate.now(), LocalDate.now().plusDays(7))));
     }
 
+    /**
+     * This method gets all doctors' shift in a specified day range.
+     * @param startDate The first day in the specified day range.
+     * @param endDate The last day in the specified day range.
+     * @return An array of the doctors' shifts in the specified day range sorted in alphabetical order.
+     */
     @GetMapping("/shift/{startDate}/{endDate}")
     public ResponseEntity<?> getAllDoctorShifts(@PathVariable("startDate") LocalDate startDate, @PathVariable("endDate") LocalDate endDate) {
-        LocalDateTime[][] doctorShifts = getShifts(startDate, endDate);
-        return ResponseEntity.ok(doctorShifts);
+        Map<String, LocalDateTime[][]> doctorShifts = new HashMap<>();
+        for (User user : userRepository.findAll()) {
+            if (RoleConverter.getUserRoleHashTable().get(user.getRole()) == 3) {
+                doctorShifts.put(user.getName(), getShifts(user.getID(), startDate, endDate));
+            }
+        }
+        Map<String, LocalDateTime[][]> sortedMap = new TreeMap<>(doctorShifts);
+        if (!sortedMap.isEmpty()) {
+            return ResponseEntity.ok(sortedMap);
+        }
+        return ResponseEntity.badRequest().body("Error!");
     }
 
+    /**
+     * This method deletes all activities by user ID.
+     * @param id Valid user ID in the user database
+     * @return Success or error message
+     */
     @DeleteMapping("/{id}")
-    public int deleteActivityByUserId(@PathVariable("id") UUID id) {
-        calendarRepository.deleteById(id);
-        return 1;
+    public ResponseEntity<?> deleteActivityByUserId(@PathVariable("id") UUID id) {
+        if (calendarRepository.findById(id).isPresent()) {
+            calendarRepository.deleteById(id);
+            return ResponseEntity.ok("Success!");
+        }
+        return ResponseEntity.badRequest().body("Error! User ID is invalid!");
     }
 
+    /**
+     * This method deletes an activity by an activity ID.
+     * @param activityId Valid activity ID from calendar database.
+     * @return Success or error message
+     */
     @DeleteMapping("/activity/{activityId}")
     public ResponseEntity<?> deleteActivityByActivityId(@PathVariable("activityId") UUID activityId) {
         if (calendarRepository.findById(activityId).isPresent()) {
             calendarRepository.deleteById(activityId);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok("Success!");
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.badRequest().body("Error! User ID is invalid!");
     }
 
+    /**
+     * This method updates an activity by activity ID.
+     * @param activityId Valid activity ID from calendar database.
+     * @param activity Valid updated activity entity to be changed in the database.
+     * @return Updated activity.
+     */
     @PutMapping("/activity/{activityId}")
     public ResponseEntity<?> updateActivityById(@PathVariable("activityId") UUID activityId,
                                   @NonNull @Valid @RequestBody Activity activity) {
@@ -161,24 +263,26 @@ public class CalendarController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * This method gets an activity by activity ID.
+     * @param activityID Valid activity ID in calendar database.
+     * @return the activity specified
+     */
     @GetMapping("/activity/{activityId}")
-    public Activity getActivityById(@PathVariable("activityId") UUID activityID) {
+    public ResponseEntity<?> getActivityById(@PathVariable("activityId") UUID activityID) {
         if (calendarRepository.findById(activityID).isPresent()) {
-            return calendarRepository.findById(activityID).get();
+            return ResponseEntity.ok(calendarRepository.findById(activityID).get());
         }
-        return null;
+        return ResponseEntity.badRequest().body("Error! The activity ID is invalid");
     }
 
-    private LocalDateTime[][] getShifts(LocalDate startDate, LocalDate endDate) {
-        List<Activity> userActivities = getUserActivities(3, startDate, endDate);
-        assert userActivities != null;
-        LocalDateTime[][] shifts = new LocalDateTime[userActivities.size()][];
-        for (int x = 0; x < userActivities.size(); x++) {
-            shifts[x] = new LocalDateTime[]{userActivities.get(x).getStartTime(), userActivities.get(x).getEndTime()};
-        }
-        return shifts;
-    }
-
+    /**
+     * This method gets a doctor's shift by ID in a specified day range.
+     * @param userId Valid doctor ID from the user database.
+     * @param startDate The first date in the specified day range.
+     * @param endDate The late date in the specified day range.
+     * @return An array of the specified doctor's shift in the day range.
+     */
     private LocalDateTime[][] getShifts(UUID userId, LocalDate startDate, LocalDate endDate) {
         List<Activity> userActivities = new ArrayList<>();
         for (Activity a : Objects.requireNonNull(getActivitiesInRange(startDate, endDate))) {
@@ -193,21 +297,11 @@ public class CalendarController {
         return shifts;
     }
 
-    /*
-    private List<Activity> getUserActivities(UUID userId, LocalDate startDate, LocalDate endDate) {
-        List<Activity> userActivities = new ArrayList<>();
-        for (Activity activity : Objects.requireNonNull(getActivitiesInRange(startDate, endDate))) {
-            if (!activity.getUserId().equals(userId)) {
-                userActivities.add(activity);
-            }
-        }
-        if (!userActivities.isEmpty()) {
-            return userActivities;
-        }
-        return null;
-    }
+    /**
+     * This method gets all of user's activities from user ID.
+     * @param userId Valid user ID from the user database
+     * @return List of user's activities
      */
-
     private List<Activity> getUserActivities(UUID userId) {
         List<Activity> userActivities = new ArrayList<>();
         for (Activity activity : calendarRepository.findAll()) {
@@ -221,6 +315,13 @@ public class CalendarController {
         return null;
     }
 
+    /**
+     * This method gets a specific role's activities in a specified day range
+     * @param role Valid role in user database
+     * @param startDate The first date in the specified day range.
+     * @param endDate The late date in the specified day range.
+     * @return List of role's activities in specified day range.
+     */
     private List<Activity> getUserActivities(int role, LocalDate startDate, LocalDate endDate) {
         List<Activity> userActivities = new ArrayList<>();
         for (Activity activity : Objects.requireNonNull(getActivitiesInRange(startDate, endDate))) {
@@ -237,6 +338,12 @@ public class CalendarController {
         return null;
     }
 
+    /**
+     * This method gets all activities in a specified day range.
+     * @param startDate The first date in the specified day range.
+     * @param endDate The late date in the specified day range.
+     * @return List of all activities in specified day range.
+     */
     private List<Activity> getActivitiesInRange(LocalDate startDate, LocalDate endDate) {
         List<Activity> activities = new ArrayList<>();
         for (Activity activity : calendarRepository.findAll()) {
@@ -250,11 +357,16 @@ public class CalendarController {
         return null;
     }
 
+    /**
+     * This method gets a specific doctor's available hours in a day
+     * @param id Valid doctor ID from user database
+     * @param date Specified date
+     * @return An array of the specific doctor's available hours during a specified date.
+     */
     private LocalDateTime[][] getDoctorAvailableHours(UUID id, LocalDate date) {
         LocalDateTime startTime;
         LocalDateTime endTime;
         List<LocalDateTime> appointments = new ArrayList<>();
-
 
         for (Activity activity : calendarRepository.findAll()) {
             if (activity.getUserId().equals(id) && activity.getStartTime().toLocalDate().equals(date)) {
@@ -264,7 +376,6 @@ public class CalendarController {
                 appointments.add(endTime);
             }
         }
-
         for (Activity activity : calendarRepository.findAll()) {
             if (activity.getRespondingUserId() != null) {
                 if (activity.getRespondingUserId().equals(id) && activity.getStartTime().toLocalDate().equals(date)) {
@@ -279,7 +390,6 @@ public class CalendarController {
         assert appointments != null;
         LocalDateTime[][] availableHours = new LocalDateTime[appointments.size()/2][];
 
-
         int count = 0;
         for (int x = 0; x < appointments.size(); x++) {
             if (x < appointments.size()-1 && x % 2 == 0) {
@@ -287,13 +397,17 @@ public class CalendarController {
                 count++;
             }
         }
-
         if (availableHours.length != 0) {
             return availableHours;
         }
         return null;
     }
 
+    /**
+     * This method removes both elements if it is repeated in a list
+     * @param list List of LocalDateTime to be sorted and cleaned.
+     * @return Sorted list that has all duplicated elements removed.
+     */
     private List<LocalDateTime> removeRepeatedElements(List<LocalDateTime> list) {
         Collections.sort(list);
         List<LocalDateTime> finalList = new ArrayList<>();
@@ -319,5 +433,6 @@ public class CalendarController {
         }
         return null;
     }
-
 }
+
+
