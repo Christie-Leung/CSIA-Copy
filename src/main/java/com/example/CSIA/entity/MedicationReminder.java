@@ -1,6 +1,7 @@
 package com.example.CSIA.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 
@@ -20,21 +21,27 @@ public class MedicationReminder {
     private UUID id;
 
     @NonNull
+    @JsonProperty(value = "startTime")
     private LocalDateTime medStartTime;
 
     @NonNull
+    @JsonProperty(value = "endTime")
     private LocalDateTime medEndTime;
 
     @NonNull
+    @JsonProperty(value = "interval")
     private short medInterval;
 
     @NonNull
+    @JsonProperty(value = "total")
     private int medTotalCount;
 
     @NonNull
+    @JsonProperty(value = "remaining")
     private int medRemainingCount;
 
     @NotBlank
+    @JsonProperty(value = "name")
     private String medication;
 
 

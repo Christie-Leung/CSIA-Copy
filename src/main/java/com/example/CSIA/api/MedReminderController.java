@@ -27,7 +27,8 @@ public class MedReminderController {
 
     /**
      * This method adds a medication reminder by user ID into the med database
-     * @param id Valid user ID from the user database
+     *
+     * @param id                 Valid user ID from the user database
      * @param medicationReminder Valid MedicationReminder entity parsed through a JSON file
      * @return Success message
      */
@@ -43,6 +44,7 @@ public class MedReminderController {
 
     /**
      * This method gets all medication reminders from the med database
+     *
      * @return Iterable list of all medication reminders
      */
     @GetMapping
@@ -52,6 +54,7 @@ public class MedReminderController {
 
     /**
      * This method gets a specified user's medication reminder
+     *
      * @param id Valid user ID from the user database
      * @return Medication reminders for specified user
      */
@@ -65,7 +68,8 @@ public class MedReminderController {
 
     /**
      * This method deletes a medication reminder by user ID and medication name
-     * @param id Valid user ID from user database
+     *
+     * @param id      Valid user ID from user database
      * @param medName Medication name
      * @return Success or error message
      */
@@ -81,6 +85,7 @@ public class MedReminderController {
 
     /**
      * This method deletes all of specified user's medication reminders
+     *
      * @param id Valid user ID from user database
      * @return Success or error message
      */
@@ -95,14 +100,15 @@ public class MedReminderController {
 
     /**
      * This method updates a medication reminder by user ID and medication name
-     * @param id Valid user ID from user database
+     *
+     * @param id      Valid user ID from user database
      * @param medName Medication Name
-     * @param mr Updated version of the medication reminder
+     * @param mr      Updated version of the medication reminder
      * @return Updated medication reminder
      */
     @PutMapping("/{id}/{med}")
     public ResponseEntity<?> updateMedReminderByMedName(@PathVariable("id") UUID id, @PathVariable("med") String medName,
-                                          @RequestBody @Valid @NonNull MedicationReminder mr) {
+                                                        @RequestBody @Valid @NonNull MedicationReminder mr) {
         Optional<MedicationReminder> tempMr = mrr.findById(id).filter(MedicationReminder ->
                 MedicationReminder.getMedication().equals(mr.getMedication()));
         if (tempMr.isPresent()) {

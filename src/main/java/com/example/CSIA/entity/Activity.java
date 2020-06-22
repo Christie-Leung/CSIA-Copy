@@ -1,12 +1,12 @@
 package com.example.CSIA.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,7 +15,6 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties(allowGetters = true, ignoreUnknown = true)
 public class Activity {
-
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
@@ -23,20 +22,22 @@ public class Activity {
     private UUID id;
 
     @NonNull
+    @JsonProperty(value = "userID")
     private UUID userId;
 
     @NonNull
+    @JsonProperty(value = "respondingUserID")
     private UUID respondingUserId;
 
     @NonNull
+    @JsonProperty(value = "startTime")
     private LocalDateTime startTime;
 
     @NonNull
+    @JsonProperty(value = "endTime")
     private LocalDateTime endTime;
 
-    @NotBlank
     private String activityName;
-
 
     public UUID getActivityId() {
         return id;

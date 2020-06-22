@@ -8,6 +8,7 @@ public class SortUser implements Comparator<User> {
 
     /**
      * Sorts the user entity by name
+     *
      * @param user1 First user to be compared with
      * @param user2 Second user to be compared with
      * @return value of comparator

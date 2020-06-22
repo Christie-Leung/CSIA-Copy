@@ -3,8 +3,10 @@ package com.example.CSIA.entity;
 
 import com.example.CSIA.converter.RoleConverter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.lang.NonNull;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -23,10 +25,13 @@ public class User {
     private UUID id;
 
     @NotBlank
+    @JsonProperty(value = "name")
     private String name;
 
     @NotBlank
+    @NonNull
     @Convert(converter = RoleConverter.class)
+    @JsonProperty(value = "role")
     private String role;
 
     public UUID getID() {
@@ -47,9 +52,5 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.CSIA.api;
 
+import com.example.CSIA.converter.RoleConverter;
 import com.example.CSIA.entity.User;
 import com.example.CSIA.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,26 +27,38 @@ public class UserController {
 
     /**
      * This method adds a user to the user database
+     *
      * @param user Valid user entity parsed through JSON file
      * @return Success message
      */
     @PostMapping
     public ResponseEntity<?> insertUser(@NonNull @Valid @RequestBody User user) {
-        userRepository.save(user);
-        return ResponseEntity.ok("Success!");
+        if (RoleConverter.getUserRoleHashTable().get(user.getRole()) != null) {
+            if (user.getName().split("\\s+").length >= 2) {
+                userRepository.save(user);
+                return ResponseEntity.ok("Success!");
+            }
+            return ResponseEntity.badRequest().body("Error! Please include a first and last name!");
+        }
+        return ResponseEntity.badRequest().body("Error! " + user.getRole() + " is not a valid role!");
     }
 
     /**
      * This method gets all users in the database
+     *
      * @return List of all users
      */
     @GetMapping
     public ResponseEntity<?> getAllUser() {
-        return ResponseEntity.ok(userRepository.findAll());
+        List<User> users = new ArrayList<>();
+        userRepository.findAll().forEach(users::add);
+        users.sort(new SortUser());
+        return ResponseEntity.ok(users);
     }
 
     /**
      * This method gets all user's ID in the database
+     *
      * @return List of all user IDs.
      */
     @GetMapping("/id")
@@ -57,6 +70,7 @@ public class UserController {
 
     /**
      * This method gets a user by ID.
+     *
      * @param id Valid ID
      * @return Request user by ID
      */
@@ -70,6 +84,7 @@ public class UserController {
 
     /**
      * This method gets all users by role.
+     *
      * @param role role of user
      * @return List of all users with specified role
      */
@@ -82,13 +97,13 @@ public class UserController {
                 userByRole.add(user);
             }
         }
-
         userByRole.sort(new SortUser());
         return userByRole;
     }
 
     /**
      * This method deletes a user by ID
+     *
      * @param id Valid user ID
      * @return Success or error message
      */
@@ -103,7 +118,8 @@ public class UserController {
 
     /**
      * This method updates a user by user ID
-     * @param id Valid user id
+     *
+     * @param id   Valid user id
      * @param user Updated user entity
      * @return Updated user
      */
